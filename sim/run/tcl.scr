@@ -1,5 +1,0 @@
-database -open waves -into ../out/wave/spi -default
-probe -create -shm tb_spi_top -all -variables -depth 8
-stop -create -time 25000000 -relative
-run
-quit
