@@ -1,0 +1,14 @@
+ncprep \
+  ../../bench/verilog/tb_spi_top.v \
+  ../../bench/verilog/wb_master_model.v \
+  ../../bench/verilog/spi_slave_model.v \
+  ../../rtl/verilog/spi_top.v \
+  ../../rtl/verilog/spi_clgen.v \
+  ../../rtl/verilog/spi_shift.v \
+  +incdir+../../rtl/verilog/ \
+  +mess \
+  +access+r \
+  +notimingchecks \
+  +overwrite \
+  +ncsimargs+"-errormax 10" \
+  +tcl+"./tcl.scr"
