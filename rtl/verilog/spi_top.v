@@ -133,6 +133,7 @@ module spi_top
       `SPI_CTRL:    wb_dat = {{32-`SPI_CTRL_BIT_NB{1'b0}}, ctrl};
       `SPI_DEVIDE:  wb_dat = {{32-`SPI_DIVIDER_BIT_NB{1'b0}}, divider};
       `SPI_SS:      wb_dat = {{32-`SPI_SS_NB{1'b0}}, ss};
+      default:      wb_dat = 32'bx;
     endcase
   end
   
@@ -219,7 +220,7 @@ module spi_top
       ss <= #Tp wb_dat_i[`SPI_SS_NB-1:0];
   end
   
-  assign ss_pad_o = ~((ss & tip & ass) | (ss & !ass));
+  assign ss_pad_o = ~((ss & {`SPI_SS_NB{tip & ass}}) | (ss & {`SPI_SS_NB{!ass}}));
   
   spi_clgen clgen (.clk_in(wb_clk_i), .rst(wb_rst_i), .go(go), .enable(tip), .last_clk(last_bit),
                    .divider(divider), .clk_out(sclk_pad_o), .pos_edge(pos_edge), 
