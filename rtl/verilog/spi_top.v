@@ -178,31 +178,31 @@ module spi_top
     else if (spi_divider_sel && wb_we_i && !tip)
       begin
       `ifdef SPI_DIVIDER_LEN_8
-        if (wb_sel_i[3])
+        if (wb_sel_i[0])
           divider <= #Tp wb_dat_i[`SPI_DIVIDER_LEN-1:0];
       `endif
       `ifdef SPI_DIVIDER_LEN_16
-        if (wb_sel_i[3])
+        if (wb_sel_i[0])
           divider[7:0] <= #Tp wb_dat_i[7:0];
-        if (wb_sel_i[2])
+        if (wb_sel_i[1])
           divider[`SPI_DIVIDER_LEN-1:8] <= #Tp wb_dat_i[`SPI_DIVIDER_LEN-1:8];
       `endif
       `ifdef SPI_DIVIDER_LEN_24
-        if (wb_sel_i[3])
+        if (wb_sel_i[0])
           divider[7:0] <= #Tp wb_dat_i[7:0];
-        if (wb_sel_i[2])
-          divider[15:8] <= #Tp wb_dat_i[15:8];
         if (wb_sel_i[1])
+          divider[15:8] <= #Tp wb_dat_i[15:8];
+        if (wb_sel_i[2])
           divider[`SPI_DIVIDER_LEN-1:16] <= #Tp wb_dat_i[`SPI_DIVIDER_LEN-1:16];
       `endif
       `ifdef SPI_DIVIDER_LEN_32
-        if (wb_sel_i[3])
-          divider[7:0] <= #Tp wb_dat_i[7:0];
-        if (wb_sel_i[2])
-          divider[15:8] <= #Tp wb_dat_i[15:8];
-        if (wb_sel_i[1])
-          divider[23:16] <= #Tp wb_dat_i[23:16];
         if (wb_sel_i[0])
+          divider[7:0] <= #Tp wb_dat_i[7:0];
+        if (wb_sel_i[1])
+          divider[15:8] <= #Tp wb_dat_i[15:8];
+        if (wb_sel_i[2])
+          divider[23:16] <= #Tp wb_dat_i[23:16];
+        if (wb_sel_i[3])
           divider[`SPI_DIVIDER_LEN-1:24] <= #Tp wb_dat_i[`SPI_DIVIDER_LEN-1:24];
       `endif
       end
@@ -215,9 +215,9 @@ module spi_top
       ctrl <= #Tp {`SPI_CTRL_BIT_NB{1'b0}};
     else if(spi_ctrl_sel && wb_we_i && !tip)
       begin
-        if (wb_sel_i[3])
+        if (wb_sel_i[0])
           ctrl[7:0] <= #Tp wb_dat_i[7:0] | {7'b0, ctrl[0]};
-        if (wb_sel_i[2])
+        if (wb_sel_i[1])
           ctrl[`SPI_CTRL_BIT_NB-1:8] <= #Tp wb_dat_i[`SPI_CTRL_BIT_NB-1:8];
       end
     else if(tip && last_bit && pos_edge)
@@ -240,31 +240,31 @@ module spi_top
     else if(spi_ss_sel && wb_we_i && !tip)
       begin
       `ifdef SPI_SS_NB_8
-        if (wb_sel_i[3])
+        if (wb_sel_i[0])
           ss <= #Tp wb_dat_i[`SPI_SS_NB-1:0];
       `endif
       `ifdef SPI_SS_NB_16
-        if (wb_sel_i[3])
+        if (wb_sel_i[0])
           ss[7:0] <= #Tp wb_dat_i[7:0];
-        if (wb_sel_i[2])
+        if (wb_sel_i[1])
           ss[`SPI_SS_NB-1:8] <= #Tp wb_dat_i[`SPI_SS_NB-1:8];
       `endif
       `ifdef SPI_SS_NB_24
-        if (wb_sel_i[3])
+        if (wb_sel_i[0])
           ss[7:0] <= #Tp wb_dat_i[7:0];
-        if (wb_sel_i[2])
-          ss[15:8] <= #Tp wb_dat_i[15:8];
         if (wb_sel_i[1])
+          ss[15:8] <= #Tp wb_dat_i[15:8];
+        if (wb_sel_i[2])
           ss[`SPI_SS_NB-1:16] <= #Tp wb_dat_i[`SPI_SS_NB-1:16];
       `endif
       `ifdef SPI_SS_NB_32
-        if (wb_sel_i[3])
-          ss[7:0] <= #Tp wb_dat_i[7:0];
-        if (wb_sel_i[2])
-          ss[15:8] <= #Tp wb_dat_i[15:8];
-        if (wb_sel_i[1])
-          ss[23:16] <= #Tp wb_dat_i[23:16];
         if (wb_sel_i[0])
+          ss[7:0] <= #Tp wb_dat_i[7:0];
+        if (wb_sel_i[1])
+          ss[15:8] <= #Tp wb_dat_i[15:8];
+        if (wb_sel_i[2])
+          ss[23:16] <= #Tp wb_dat_i[23:16];
+        if (wb_sel_i[3])
           ss[`SPI_SS_NB-1:24] <= #Tp wb_dat_i[`SPI_SS_NB-1:24];
       `endif
       end
