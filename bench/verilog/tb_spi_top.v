@@ -137,7 +137,7 @@ module tb_spi_top();
 
       $display("status: %t programmed registers", $time);
 
-      i_wb_master.wb_cmp(0, SPI_DIVIDE, 32'h05);   // verify devider register
+      i_wb_master.wb_cmp(0, SPI_DIVIDE, 32'h00);   // verify devider register
       i_wb_master.wb_cmp(0, SPI_TX_0, 32'h5a);     // verify tx register
       i_wb_master.wb_cmp(0, SPI_CTRL, 32'h42);     // verify tx register
       i_wb_master.wb_cmp(0, SPI_SS, 32'h01);       // verify ss register
