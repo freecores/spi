@@ -91,6 +91,7 @@ module spi_top
   wire                             go;               // go
   wire                             lsb;              // lsb first on line
   wire                             ie;               // interrupt enable
+  wire                             ass;              // automatic slave select
   wire                             spi_divider_sel;  // divider register select
   wire                             spi_ctrl_sel;     // ctrl register select
   wire                             spi_tx_sel_l;     // tx_l register select
@@ -185,6 +186,7 @@ module spi_top
         ctrl[`SPI_CTRL_CHAR_LEN]   <= #Tp wb_dat_i[`SPI_CTRL_CHAR_LEN];
         ctrl[`SPI_CTRL_LSB]        <= #Tp wb_dat_i[`SPI_CTRL_LSB];
         ctrl[`SPI_CTRL_IE]         <= #Tp wb_dat_i[`SPI_CTRL_IE];
+        ctrl[`SPI_CTRL_ASS]        <= #Tp wb_dat_i[`SPI_CTRL_ASS];
       end
     else if(tip && last_bit && pos_edge)
       ctrl[`SPI_CTRL_GO] <= #Tp 1'b0;
@@ -196,6 +198,7 @@ module spi_top
   assign char_len   = ctrl[`SPI_CTRL_CHAR_LEN];
   assign lsb        = ctrl[`SPI_CTRL_LSB];
   assign ie         = ctrl[`SPI_CTRL_IE];
+  assign ass        = ctrl[`SPI_CTRL_ASS];
   
   // Slave select register
   always @(posedge wb_clk_i or posedge wb_rst_i)
@@ -206,7 +209,7 @@ module spi_top
       ss <= #Tp wb_dat_i[`SPI_SS_NB-1:0];
   end
   
-  assign ss_pad_o = ~ss;
+  assign ss_pad_o = ~((ss & tip & ass) | (ss & !ass));
   
   spi_clgen clgen (.clk_in(wb_clk_i), .rst(wb_rst_i), .enable(tip), .last_clk(last_bit),
                    .divider(divider), .clk_out(sclk_pad_o), .pos_edge(pos_edge), 

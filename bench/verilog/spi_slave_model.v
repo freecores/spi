@@ -60,7 +60,7 @@ module spi_slave_model (rst, ss, sclk, mosi, miso);
   begin
     if (rst)
       data <= #Tp 32'b0;
-    else
+    else if (!ss)
       data <= #Tp {data[30:0], mosi};
   end
 

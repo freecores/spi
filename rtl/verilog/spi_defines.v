@@ -78,11 +78,12 @@
 //
 // Number of bits in ctrl register
 //
-`define SPI_CTRL_BIT_NB         11
+`define SPI_CTRL_BIT_NB         12
 
 //
 // Control register bit position
 //
+`define SPI_CTRL_ASS            11
 `define SPI_CTRL_IE             10
 `define SPI_CTRL_LSB            9
 `define SPI_CTRL_CHAR_LEN       8:3

@@ -338,6 +338,32 @@ module tb_spi_top();
       else
         $display("status: %t transfer completed: 0xf7b3d591 != 0x%x 0x01234567 != 0x%x nok", $time, i_spi_slave.data, q);
 
+      i_wb_master.wb_write(0, SPI_TX_L, 32'hffeeddcc);
+      i_wb_master.wb_write(0, SPI_TX_H, 32'hbbaa9988);
+      i_wb_master.wb_write(0, SPI_CTRL, 32'he06);   // ass, set 64 bit transfer, ie, lsb, rx negedge, tx negedge
+      i_wb_master.wb_write(0, SPI_CTRL, 32'he07);   // set 64 bit transfer, start transfer
+
+      $display("status: %t generate transfer: 64 bit (0xffeeddccbbaa9988), ass, msb first, tx negedge, rx negedge", $time);
+
+      // Check interrupt signal
+      while (!int)
+        @(posedge clk);
+
+      i_wb_master.wb_read(1, SPI_RX_H, q);
+
+      @(posedge clk);
+      if (int)
+        $display("status: %t transfer completed: interrupt still active                            nok", $time, i_spi_slave.data, q);
+
+      if (i_spi_slave.data == 32'h119955dd && q == 32'hffeeddcc)
+        $display("status: %t transfer completed: 0x119955dd == 0x%x 0xffeeddcc == 0x%x ok", $time, i_spi_slave.data, q);
+      else if (i_spi_slave.data == 32'h119955dd)
+        $display("status: %t transfer completed: 0x119955dd == 0x%x 0xffeeddcc != 0x%x nok", $time, i_spi_slave.data, q);
+      else if (q == 32'h119955dd)
+        $display("status: %t transfer completed: 0x119955dd != 0x%x 0xffeeddcc == 0x%x nok", $time, i_spi_slave.data, q);
+      else
+        $display("status: %t transfer completed: 0x119955dd != 0x%x 0xffeeddcc != 0x%x nok", $time, i_spi_slave.data, q);
+
       $display("\n\nstatus: %t Testbench done", $time);
 
       #25000; // wait 25us
