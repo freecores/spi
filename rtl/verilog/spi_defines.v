@@ -47,11 +47,13 @@
 
 //
 // Maximum nuber of bits that can be send/received at once. Alloved values are
-// 32, 16 and 8. SPI_CHAR_LEN_BITS must be also set to 5, 4 or 3 respectively.
-// Default is 32.
+// 64, 32, 16 and 8. SPI_CHAR_LEN_BITS must be also set to 6, 5, 4 or 3 respectively.
+// Default is 64.
+// If SPI_MAX_CHAR is 64, SPI_MAX_CHAR_64 must be defined, otherwise comment it
 //
-`define SPI_MAX_CHAR            32
-`define SPI_CHAR_LEN_BITS       5
+`define SPI_MAX_CHAR_64         1
+`define SPI_MAX_CHAR            64
+`define SPI_CHAR_LEN_BITS       6
 
 //
 // Number of device select signals.
@@ -60,28 +62,30 @@
 //
 // Bits of WISHBONE address used for partial decoding of SPI registers.
 //
-`define SPI_OFS_BITS	          3:2
+`define SPI_OFS_BITS	          4:2
 
 //
 // Register offset
 //
-`define SPI_RX                  0
-`define SPI_TX                  0
-`define SPI_CTRL                1
-`define SPI_DEVIDE              2
-`define SPI_SS                  3
+`define SPI_RX_L                0
+`define SPI_RX_H                1
+`define SPI_TX_L                0
+`define SPI_TX_H                1
+`define SPI_CTRL                2
+`define SPI_DEVIDE              3
+`define SPI_SS                  4
 
 //
 // Number of bits in ctrl register
 //
-`define SPI_CTRL_BIT_NB         10
+`define SPI_CTRL_BIT_NB         11
 
 //
 // Control register bit position
 //
-`define SPI_CTRL_IE             9
-`define SPI_CTRL_LSB            8
-`define SPI_CTRL_CHAR_LEN       7:3
+`define SPI_CTRL_IE             10
+`define SPI_CTRL_LSB            9
+`define SPI_CTRL_CHAR_LEN       8:3
 `define SPI_CTRL_TX_NEGEDGE     2
 `define SPI_CTRL_RX_NEGEDGE     1
 `define SPI_CTRL_GO             0

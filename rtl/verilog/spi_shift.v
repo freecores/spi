@@ -41,7 +41,7 @@
 `include "spi_defines.v"
 `include "timescale.v"
 
-module spi_shift (clk, rst, latch, len, lsb, go,
+module spi_shift (clk, rst, latch_h, latch_l, len, lsb, go,
                   pos_edge, neg_edge, rx_negedge, tx_negedge,
                   tip, last, 
                   p_in, p_out, s_clk, s_in, s_out);
@@ -50,7 +50,8 @@ module spi_shift (clk, rst, latch, len, lsb, go,
   
   input                          clk;          // system clock
   input                          rst;          // reset
-  input                          latch;        // latch signal for storing the data in shift register
+  input                          latch_h;      // latch_h signal for storing the data in shift register
+  input                          latch_l;      // latch_l signal for storing the data in shift register
   input [`SPI_CHAR_LEN_BITS-1:0] len;          // data len in bits (minus one)
   input                          lsb;          // lbs first on the line
   input                          go;           // start stansfer
@@ -60,7 +61,7 @@ module spi_shift (clk, rst, latch, len, lsb, go,
   input                          tx_negedge;   // s_out is driven on negative edge
   output                         tip;          // transfer in progress
   output                         last;         // last bit
-  input      [`SPI_MAX_CHAR-1:0] p_in;         // parallel in
+  input                   [31:0] p_in;         // parallel in
   output     [`SPI_MAX_CHAR-1:0] p_out;        // parallel out
   input                          s_clk;        // serial clock
   input                          s_in;         // serial in
@@ -126,8 +127,15 @@ module spi_shift (clk, rst, latch, len, lsb, go,
   begin
     if (rst)
       data   <= #Tp {`SPI_MAX_CHAR{1'b0}};
-    else if (latch && !tip)
-      data <= #Tp p_in;
+`ifdef SPI_MAX_CHAR_64
+    else if (latch_l && !tip)
+      data[31:0] <= #Tp p_in[31:0];
+    else if (latch_h && !tip)
+      data[63:32] <= #Tp p_in[31:0];
+`else
+    else if (latch_l && !tip)
+      data <= #Tp p_in[`SPI_MAX_CHAR-1:0];
+`endif
     else
       data[rx_bit_pos[`SPI_CHAR_LEN_BITS-1:0]] <= #Tp rx_clk ? s_in : data[rx_bit_pos[`SPI_CHAR_LEN_BITS-1:0]];
   end

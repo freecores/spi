@@ -52,15 +52,14 @@ module spi_top
   ss_pad_o, sclk_pad_o, mosi_pad_o, miso_pad_i
 );
 
-  parameter dw = 32;
   parameter Tp = 1;
 
   // Wishbone signals
   input                            wb_clk_i;         // master clock input
   input                            wb_rst_i;         // synchronous active high reset
   input                      [4:0] wb_adr_i;         // lower address bits
-  input                   [dw-1:0] wb_dat_i;         // databus input
-  output                  [dw-1:0] wb_dat_o;         // databus output
+  input                   [32-1:0] wb_dat_i;         // databus input
+  output                  [32-1:0] wb_dat_o;         // databus output
   input                      [3:0] wb_sel_i;         // byte select inputs
   input                            wb_we_i;          // write enable input
   input                            wb_stb_i;         // stobe/core select signal
@@ -75,7 +74,7 @@ module spi_top
   output                           mosi_pad_o;       // master out slave in
   input                            miso_pad_i;       // master in slave out
                                                      
-  reg                     [dw-1:0] wb_dat_o;
+  reg                     [32-1:0] wb_dat_o;
   reg                              wb_ack_o;
   reg                              wb_err_o;
   reg                              wb_int_o;
@@ -84,7 +83,7 @@ module spi_top
   reg    [`SPI_DIVIDER_BIT_NB-1:0] divider;          // Divider register
   reg       [`SPI_CTRL_BIT_NB-1:0] ctrl;             // Control and status register
   reg             [`SPI_SS_NB-1:0] ss;               // Slave select register
-  reg                     [dw-1:0] wb_dat;           // wb data out
+  reg                     [32-1:0] wb_dat;           // wb data out
   wire         [`SPI_MAX_CHAR-1:0] rx;               // Rx register
   wire                             rx_negedge;       // miso is sampled on negative edge
   wire                             tx_negedge;       // mosi is driven on negative edge
@@ -94,7 +93,8 @@ module spi_top
   wire                             ie;               // interrupt enable
   wire                             spi_divider_sel;  // divider register select
   wire                             spi_ctrl_sel;     // ctrl register select
-  wire                             spi_tx_sel;       // tx register select
+  wire                             spi_tx_sel_l;     // tx_l register select
+  wire                             spi_tx_sel_h;     // tx_h register select
   wire                             spi_ss_sel;       // ss register select
   wire                             tip;              // transfer in progress
   wire                             pos_edge;         // recognize posedge of sclk
@@ -104,17 +104,24 @@ module spi_top
   // Address decoder
   assign spi_divider_sel = wb_cyc_i & wb_stb_i & (wb_adr_i[`SPI_OFS_BITS] == `SPI_DEVIDE);
   assign spi_ctrl_sel    = wb_cyc_i & wb_stb_i & (wb_adr_i[`SPI_OFS_BITS] == `SPI_CTRL);
-  assign spi_tx_sel      = wb_cyc_i & wb_stb_i & (wb_adr_i[`SPI_OFS_BITS] == `SPI_TX);
+  assign spi_tx_sel_h    = wb_cyc_i & wb_stb_i & (wb_adr_i[`SPI_OFS_BITS] == `SPI_TX_H);
+  assign spi_tx_sel_l    = wb_cyc_i & wb_stb_i & (wb_adr_i[`SPI_OFS_BITS] == `SPI_TX_L);
   assign spi_ss_sel      = wb_cyc_i & wb_stb_i & (wb_adr_i[`SPI_OFS_BITS] == `SPI_SS);
   
   // Read from registers
   always @(wb_adr_i or rx or ctrl or divider or ss)
   begin
     case (wb_adr_i[`SPI_OFS_BITS])
-      `SPI_RX:      wb_dat = {{dw-`SPI_MAX_CHAR{1'b0}}, rx};
-      `SPI_CTRL:    wb_dat = {{dw-`SPI_CTRL_BIT_NB{1'b0}}, ctrl};
-      `SPI_DEVIDE:  wb_dat = {{dw-`SPI_DIVIDER_BIT_NB{1'b0}}, divider};
-      `SPI_SS:      wb_dat = {{dw-`SPI_SS_NB{1'b0}}, ss};
+`ifdef SPI_MAX_CHAR_64
+      `SPI_RX_L:    wb_dat = rx[31:0];
+      `SPI_RX_H:    wb_dat = rx[63:32];
+`else
+      `SPI_RX_L:    wb_dat = {{32-`SPI_MAX_CHAR{1'b0}}, rx};
+      `SPI_RX_H:    wb_dat = 32'b0;
+`endif
+      `SPI_CTRL:    wb_dat = {{32-`SPI_CTRL_BIT_NB{1'b0}}, ctrl};
+      `SPI_DEVIDE:  wb_dat = {{32-`SPI_DIVIDER_BIT_NB{1'b0}}, divider};
+      `SPI_SS:      wb_dat = {{32-`SPI_SS_NB{1'b0}}, ss};
     endcase
   end
   
@@ -122,7 +129,7 @@ module spi_top
   always @(posedge wb_clk_i or posedge wb_rst_i)
   begin
     if (wb_rst_i)
-      wb_dat_o <= #Tp {dw{1'b0}};
+      wb_dat_o <= #Tp 32'b0;
     else
       wb_dat_o <= #Tp wb_dat;
   end
@@ -206,8 +213,8 @@ module spi_top
                    .neg_edge(neg_edge));
   
   spi_shift shift (.clk(wb_clk_i), .rst(wb_rst_i), .len(char_len[`SPI_CHAR_LEN_BITS-1:0]),
-                   .latch(spi_tx_sel && wb_we_i), .lsb(lsb), .go(go),
-                   .pos_edge(pos_edge), .neg_edge(neg_edge), 
+                   .latch_h(spi_tx_sel_h && wb_we_i), .latch_l(spi_tx_sel_l && wb_we_i), .lsb(lsb), 
+                   .go(go), .pos_edge(pos_edge), .neg_edge(neg_edge), 
                    .rx_negedge(rx_negedge), .tx_negedge(tx_negedge),
                    .tip(tip), .last(last_bit), 
                    .p_in(wb_dat_i), .p_out(rx), 
