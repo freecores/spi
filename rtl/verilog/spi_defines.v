@@ -43,24 +43,26 @@
 // low frequency of system clock this can be reduced.
 // Default is 16.
 //
-`define SPI_DIVIDER_BIT_NB      16
+//`define SPI_DIVIDER_LEN_8
+`define SPI_DIVIDER_LEN_16
+//`define SPI_DIVIDER_LEN_32
 
 //
-// Maximum nuber of bits that can be send/received at once. Alloved values are
-// 128, 64, 32, 16 and 8. SPI_CHAR_LEN_BITS must be also set to 7, 6, 5, 4 or 3 respectively.
-// Default is 128.
-// If SPI_MAX_CHAR is 64 or 128, SPI_MAX_CHAR_64 or SPI_MAX_CHAR_128 must be defined, 
-// otherwise comment it out.
+// Maximum nuber of bits that can be send/received at once. 
 //
-`define SPI_MAX_CHAR_128        1
-//`define SPI_MAX_CHAR_64         1
-`define SPI_MAX_CHAR            128
-`define SPI_CHAR_LEN_BITS       7
+`define SPI_MAX_CHAR_128
+//`define SPI_MAX_CHAR_64
+//`define SPI_MAX_CHAR_32
+//`define SPI_MAX_CHAR_16
+//`define SPI_MAX_CHAR_8
 
 //
 // Number of device select signals.
 //
-`define SPI_SS_NB               8
+`define SPI_SS_NB_8
+//`define SPI_SS_NB_16
+//`define SPI_SS_NB_32
+
 //
 // Bits of WISHBONE address used for partial decoding of SPI registers.
 //
@@ -96,5 +98,47 @@
 `define SPI_CTRL_TX_NEGEDGE     2
 `define SPI_CTRL_RX_NEGEDGE     1
 `define SPI_CTRL_GO             0
+
+
+`ifdef SPI_DIVIDER_LEN_8
+  `define SPI_DIVIDER_LEN       8
+`endif
+`ifdef SPI_DIVIDER_LEN_16
+  `define SPI_DIVIDER_LEN       16
+`endif
+`ifdef SPI_DIVIDER_LEN_32
+  `define SPI_DIVIDER_LEN       32
+`endif
+
+`ifdef SPI_MAX_CHAR_128
+  `define SPI_MAX_CHAR          128
+  `define SPI_CHAR_LEN_BITS     7
+`endif
+`ifdef SPI_MAX_CHAR_64
+  `define SPI_MAX_CHAR          64
+  `define SPI_CHAR_LEN_BITS     6
+`endif
+`ifdef SPI_MAX_CHAR_32
+  `define SPI_MAX_CHAR          32
+  `define SPI_CHAR_LEN_BITS     5
+`endif
+`ifdef SPI_MAX_CHAR_16
+  `define SPI_MAX_CHAR          16
+  `define SPI_CHAR_LEN_BITS     4
+`endif
+`ifdef SPI_MAX_CHAR_8
+  `define SPI_MAX_CHAR          8
+  `define SPI_CHAR_LEN_BITS     3
+`endif
+
+`ifdef SPI_SS_NB_8
+  `define SPI_SS_NB             8
+`endif
+`ifdef SPI_SS_NB_16
+  `define SPI_SS_NB             16
+`endif
+`ifdef SPI_SS_NB_32
+  `define SPI_SS_NB             32
+`endif
 
 
