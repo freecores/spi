@@ -117,34 +117,18 @@ module spi_top
       `SPI_RX_0:    wb_dat = rx[31:0];
       `SPI_RX_1:    wb_dat = rx[63:32];
       `SPI_RX_2:    wb_dat = rx[95:64];
-      `SPI_RX_3:    wb_dat = rx[127:96];
+      `SPI_RX_3:    wb_dat = {{128-`SPI_MAX_CHAR{1'b0}}, rx[`SPI_MAX_CHAR-1:96]};
 `else
 `ifdef SPI_MAX_CHAR_64
       `SPI_RX_0:    wb_dat = rx[31:0];
-      `SPI_RX_1:    wb_dat = rx[63:32];
+      `SPI_RX_1:    wb_dat = {{64-`SPI_MAX_CHAR{1'b0}}, rx[`SPI_MAX_CHAR-1:32]};
       `SPI_RX_2:    wb_dat = 32'b0;
       `SPI_RX_3:    wb_dat = 32'b0;
 `else
-`ifdef SPI_MAX_CHAR_32
-      `SPI_RX_0:    wb_dat = rx;
+      `SPI_RX_0:    wb_dat = {{32-`SPI_MAX_CHAR{1'b0}}, rx[`SPI_MAX_CHAR-1:0]};
       `SPI_RX_1:    wb_dat = 32'b0;
       `SPI_RX_2:    wb_dat = 32'b0;
       `SPI_RX_3:    wb_dat = 32'b0;
-`else
-`ifdef SPI_MAX_CHAR_16
-      `SPI_RX_0:    wb_dat = {16'b0, rx};
-      `SPI_RX_1:    wb_dat = 32'b0;
-      `SPI_RX_2:    wb_dat = 32'b0;
-      `SPI_RX_3:    wb_dat = 32'b0;
-`else
-`ifdef SPI_MAX_CHAR_8
-      `SPI_RX_0:    wb_dat = {24'b0, rx};
-      `SPI_RX_1:    wb_dat = 32'b0;
-      `SPI_RX_2:    wb_dat = 32'b0;
-      `SPI_RX_3:    wb_dat = 32'b0;
-`endif
-`endif
-`endif
 `endif
 `endif
       `SPI_CTRL:    wb_dat = {{32-`SPI_CTRL_BIT_NB{1'b0}}, ctrl};
@@ -195,13 +179,21 @@ module spi_top
       begin
       `ifdef SPI_DIVIDER_LEN_8
         if (wb_sel_i[3])
-          divider <= #Tp wb_dat_i[7:0];
+          divider <= #Tp wb_dat_i[`SPI_DIVIDER_LEN-1:0];
       `endif
       `ifdef SPI_DIVIDER_LEN_16
         if (wb_sel_i[3])
           divider[7:0] <= #Tp wb_dat_i[7:0];
         if (wb_sel_i[2])
+          divider[`SPI_DIVIDER_LEN-1:8] <= #Tp wb_dat_i[`SPI_DIVIDER_LEN-1:8];
+      `endif
+      `ifdef SPI_DIVIDER_LEN_24
+        if (wb_sel_i[3])
+          divider[7:0] <= #Tp wb_dat_i[7:0];
+        if (wb_sel_i[2])
           divider[15:8] <= #Tp wb_dat_i[15:8];
+        if (wb_sel_i[1])
+          divider[`SPI_DIVIDER_LEN-1:16] <= #Tp wb_dat_i[`SPI_DIVIDER_LEN-1:16];
       `endif
       `ifdef SPI_DIVIDER_LEN_32
         if (wb_sel_i[3])
@@ -211,7 +203,7 @@ module spi_top
         if (wb_sel_i[1])
           divider[23:16] <= #Tp wb_dat_i[23:16];
         if (wb_sel_i[0])
-          divider[31:24] <= #Tp wb_dat_i[31:24];
+          divider[`SPI_DIVIDER_LEN-1:24] <= #Tp wb_dat_i[`SPI_DIVIDER_LEN-1:24];
       `endif
       end
   end
@@ -249,13 +241,21 @@ module spi_top
       begin
       `ifdef SPI_SS_NB_8
         if (wb_sel_i[3])
-          ss <= #Tp wb_dat_i[7:0];
+          ss <= #Tp wb_dat_i[`SPI_SS_NB-1:0];
       `endif
       `ifdef SPI_SS_NB_16
         if (wb_sel_i[3])
           ss[7:0] <= #Tp wb_dat_i[7:0];
         if (wb_sel_i[2])
+          ss[`SPI_SS_NB-1:8] <= #Tp wb_dat_i[`SPI_SS_NB-1:8];
+      `endif
+      `ifdef SPI_SS_NB_24
+        if (wb_sel_i[3])
+          ss[7:0] <= #Tp wb_dat_i[7:0];
+        if (wb_sel_i[2])
           ss[15:8] <= #Tp wb_dat_i[15:8];
+        if (wb_sel_i[1])
+          ss[`SPI_SS_NB-1:16] <= #Tp wb_dat_i[`SPI_SS_NB-1:16];
       `endif
       `ifdef SPI_SS_NB_32
         if (wb_sel_i[3])
@@ -265,7 +265,7 @@ module spi_top
         if (wb_sel_i[1])
           ss[23:16] <= #Tp wb_dat_i[23:16];
         if (wb_sel_i[0])
-          ss[31:24] <= #Tp wb_dat_i[31:24];
+          ss[`SPI_SS_NB-1:24] <= #Tp wb_dat_i[`SPI_SS_NB-1:24];
       `endif
       end
   end
@@ -284,21 +284,4 @@ module spi_top
                    .p_in(wb_dat_i), .p_out(rx), 
                    .s_clk(sclk_pad_o), .s_in(miso_pad_i), .s_out(mosi_pad_o));
 endmodule
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
