@@ -41,13 +41,14 @@
 `include "spi_defines.v"
 `include "timescale.v"
 
-module spi_clgen (clk_in, rst, enable, last_clk, divider, clk_out, pos_edge, neg_edge); 
+module spi_clgen (clk_in, rst, go, enable, last_clk, divider, clk_out, pos_edge, neg_edge); 
 
   parameter Tp = 1;
   
   input                            clk_in;   // input clock (system clock)
   input                            rst;      // reset
   input                            enable;   // clock enable
+  input                            go;       // start transfer
   input                            last_clk; // last clock
   input  [`SPI_DIVIDER_BIT_NB-1:0] divider;  // clock divider (output clock is divided by this value)
   output                           clk_out;  // output clock
@@ -86,7 +87,7 @@ module spi_clgen (clk_in, rst, enable, last_clk, divider, clk_out, pos_edge, neg
     if(rst)
       clk_out <= #Tp 1'b0;
     else
-      clk_out <= #Tp (cnt_zero && (!last_clk || clk_out)) ? ~clk_out : clk_out;
+      clk_out <= #Tp (enable && cnt_zero && (!last_clk || clk_out)) ? ~clk_out : clk_out;
   end
    
   // Pos and neg edge signals
@@ -99,8 +100,8 @@ module spi_clgen (clk_in, rst, enable, last_clk, divider, clk_out, pos_edge, neg
       end
     else
       begin
-        pos_edge  <= #Tp (clk_out == 1'b0) && cnt_one;
-        neg_edge  <= #Tp (clk_out == 1'b1) && cnt_one;
+        pos_edge  <= #Tp (enable && !clk_out && cnt_one) || (!(|divider) && clk_out) || (!(|divider) && go && !enable);
+        neg_edge  <= #Tp (enable && clk_out && cnt_one) || (!(|divider) && !clk_out && enable);
       end
   end
 endmodule

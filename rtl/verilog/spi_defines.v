@@ -47,13 +47,15 @@
 
 //
 // Maximum nuber of bits that can be send/received at once. Alloved values are
-// 64, 32, 16 and 8. SPI_CHAR_LEN_BITS must be also set to 6, 5, 4 or 3 respectively.
-// Default is 64.
-// If SPI_MAX_CHAR is 64, SPI_MAX_CHAR_64 must be defined, otherwise comment it
+// 128, 64, 32, 16 and 8. SPI_CHAR_LEN_BITS must be also set to 7, 6, 5, 4 or 3 respectively.
+// Default is 128.
+// If SPI_MAX_CHAR is 64 or 128, SPI_MAX_CHAR_64 or SPI_MAX_CHAR_128 must be defined, 
+// otherwise comment it out.
 //
-`define SPI_MAX_CHAR_64         1
-`define SPI_MAX_CHAR            64
-`define SPI_CHAR_LEN_BITS       6
+`define SPI_MAX_CHAR_128        1
+//`define SPI_MAX_CHAR_64         1
+`define SPI_MAX_CHAR            128
+`define SPI_CHAR_LEN_BITS       7
 
 //
 // Number of device select signals.
@@ -67,26 +69,30 @@
 //
 // Register offset
 //
-`define SPI_RX_L                0
-`define SPI_RX_H                1
-`define SPI_TX_L                0
-`define SPI_TX_H                1
-`define SPI_CTRL                2
-`define SPI_DEVIDE              3
-`define SPI_SS                  4
+`define SPI_RX_0                0
+`define SPI_RX_1                1
+`define SPI_RX_2                2
+`define SPI_RX_3                3
+`define SPI_TX_0                0
+`define SPI_TX_1                1
+`define SPI_TX_2                2
+`define SPI_TX_3                3
+`define SPI_CTRL                4
+`define SPI_DEVIDE              5
+`define SPI_SS                  6
 
 //
 // Number of bits in ctrl register
 //
-`define SPI_CTRL_BIT_NB         12
+`define SPI_CTRL_BIT_NB         13
 
 //
 // Control register bit position
 //
-`define SPI_CTRL_ASS            11
-`define SPI_CTRL_IE             10
-`define SPI_CTRL_LSB            9
-`define SPI_CTRL_CHAR_LEN       8:3
+`define SPI_CTRL_ASS            12
+`define SPI_CTRL_IE             11
+`define SPI_CTRL_LSB            10
+`define SPI_CTRL_CHAR_LEN       9:3
 `define SPI_CTRL_TX_NEGEDGE     2
 `define SPI_CTRL_RX_NEGEDGE     1
 `define SPI_CTRL_GO             0

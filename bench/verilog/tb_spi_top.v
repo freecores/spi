@@ -64,14 +64,21 @@ module tb_spi_top();
   wire        miso;
 
   reg  [31:0] q;
+  reg  [31:0] q1;
+  reg  [31:0] q2;
+  reg  [31:0] q3;
 
-  parameter SPI_RX_L   = 5'h0;
-  parameter SPI_RX_H   = 5'h4;
-  parameter SPI_TX_L   = 5'h0;
-  parameter SPI_TX_H   = 5'h4;
-  parameter SPI_CTRL   = 5'h8;
-  parameter SPI_DEVIDE = 5'hc;
-  parameter SPI_SS     = 5'h10;
+  parameter SPI_RX_0   = 5'h0;
+  parameter SPI_RX_1   = 5'h4;
+  parameter SPI_RX_2   = 5'h8;
+  parameter SPI_RX_3   = 5'hc;
+  parameter SPI_TX_0   = 5'h0;
+  parameter SPI_TX_1   = 5'h4;
+  parameter SPI_TX_2   = 5'h8;
+  parameter SPI_TX_3   = 5'hc;
+  parameter SPI_CTRL   = 5'h10;
+  parameter SPI_DIVIDE = 5'h14;
+  parameter SPI_SS     = 5'h18;
 
   // Generate clock
   always #5 clk = ~clk;
@@ -123,246 +130,184 @@ module tb_spi_top();
       @(posedge clk);
 
       // Program core
-      i_wb_master.wb_write(0, SPI_DEVIDE, 32'h05); // set devider register
-      i_wb_master.wb_write(0, SPI_TX_L, 32'h5a);   // set tx register to 0x5a
-      i_wb_master.wb_write(0, SPI_CTRL, 32'h40);   // set 8 bit transfer
+      i_wb_master.wb_write(0, SPI_DIVIDE, 32'h00); // set devider register
+      i_wb_master.wb_write(0, SPI_TX_0, 32'h5a);   // set tx register to 0x5a
+      i_wb_master.wb_write(0, SPI_CTRL, 32'h42);   // set 8 bit transfer
       i_wb_master.wb_write(0, SPI_SS, 32'h01);     // set ss 0
 
       $display("status: %t programmed registers", $time);
 
-      i_wb_master.wb_cmp(0, SPI_DEVIDE, 32'h05);   // verify devider register
-      i_wb_master.wb_cmp(0, SPI_TX_L, 32'h5a);     // verify tx register
-      i_wb_master.wb_cmp(0, SPI_CTRL, 32'h40);     // verify tx register
+      i_wb_master.wb_cmp(0, SPI_DIVIDE, 32'h05);   // verify devider register
+      i_wb_master.wb_cmp(0, SPI_TX_0, 32'h5a);     // verify tx register
+      i_wb_master.wb_cmp(0, SPI_CTRL, 32'h42);     // verify tx register
       i_wb_master.wb_cmp(0, SPI_SS, 32'h01);       // verify ss register
 
       $display("status: %t verified registers", $time);
 
       i_spi_slave.rx_negedge = 1'b1;
-      i_wb_master.wb_write(0, SPI_CTRL, 32'h41);   // set 8 bit transfer, start transfer
+      i_spi_slave.tx_negedge = 1'b0;
+      i_spi_slave.data[31:0] = 32'ha5967e5a;
+      i_wb_master.wb_write(0, SPI_CTRL, 32'h43);   // set 8 bit transfer, start transfer
 
-      $display("status: %t generate transfer:  8 bit (0x0000005a), msb first, tx posedge, rx negedge", $time);
+      $display("status: %t generate transfer:  8 bit, msb first, tx posedge, rx negedge", $time);
 
       // Check bsy bit
       i_wb_master.wb_read(0, SPI_CTRL, q);
       while (q[0])
         i_wb_master.wb_read(1, SPI_CTRL, q);
 
-      if (i_spi_slave.data == 32'h5a)
-        $display("status: %t transfer completed: 0x0000005a == 0x%x                          ok", $time, i_spi_slave.data);
+      i_wb_master.wb_read(1, SPI_RX_0, q);
+
+      if (i_spi_slave.data[7:0] == 8'h5a && q == 32'h000000a5)
+        $display("status: %t transfer completed: ok", $time);
       else
-        $display("status: %t transfer completed: 0x0000005a != 0x%x                          nok", $time, i_spi_slave.data);
+        $display("status: %t transfer completed: nok", $time);
 
       i_spi_slave.rx_negedge = 1'b0;
-      i_wb_master.wb_write(0, SPI_TX_L, 32'ha5);
+      i_spi_slave.tx_negedge = 1'b1;
+      i_wb_master.wb_write(0, SPI_TX_0, 32'ha5);
       i_wb_master.wb_write(0, SPI_CTRL, 32'h44);   // set 8 bit transfer, tx negedge
       i_wb_master.wb_write(0, SPI_CTRL, 32'h45);   // set 8 bit transfer, tx negedge, start transfer
 
-      $display("status: %t generate transfer:  8 bit (0x0000005a), msb first, tx negedge, rx posedge", $time);
+      $display("status: %t generate transfer:  8 bit, msb first, tx negedge, rx posedge", $time);
 
       // Check bsy bit
       i_wb_master.wb_read(0, SPI_CTRL, q);
       while (q[0])
         i_wb_master.wb_read(1, SPI_CTRL, q);
 
-      if (i_spi_slave.data == 32'h5aa5)
-        $display("status: %t transfer completed: 0x00005aa5 == 0x%x                          ok", $time, i_spi_slave.data);
+      i_wb_master.wb_read(1, SPI_RX_0, q);
+
+      if (i_spi_slave.data[7:0] == 8'ha5 && q == 32'h00000096)
+        $display("status: %t transfer completed: ok", $time);
       else
-        $display("status: %t transfer completed: 0x00005aa5 != 0x%x                          nok", $time, i_spi_slave.data);
-
-      i_spi_slave.rx_negedge = 1'b0;
-      i_wb_master.wb_write(0, SPI_TX_L, 32'h5aa5);
-      i_wb_master.wb_write(0, SPI_CTRL, 32'h284);   // set 16 bit transfer, tx negedge, lsb
-      i_wb_master.wb_write(0, SPI_CTRL, 32'h285);   // set 16 bit transfer, tx negedge, start transfer
-
-      $display("status: %t generate transfer: 16 bit (0x00005aa5), lsb first, tx negedge, rx posedge", $time);
-
-      // Check bsy bit
-      i_wb_master.wb_read(0, SPI_CTRL, q);
-      while (q[0])
-        i_wb_master.wb_read(1, SPI_CTRL, q);
-
-
-      if (i_spi_slave.data == 32'h5aa5a55a)
-        $display("status: %t transfer completed: 0x5aa5a55a == 0x%x                          ok", $time, i_spi_slave.data);
-      else
-        $display("status: %t transfer completed: 0x5aa5a55a != 0x%x                          nok", $time, i_spi_slave.data);
+        $display("status: %t transfer completed: nok", $time);
 
       i_spi_slave.rx_negedge = 1'b0;
       i_spi_slave.tx_negedge = 1'b1;
-      i_wb_master.wb_write(0, SPI_TX_L, 32'h55);
-      i_wb_master.wb_write(0, SPI_CTRL, 32'h244);   // set 8 bit transfer, tx negedge, lsb
-      i_wb_master.wb_write(0, SPI_CTRL, 32'h245);   // set 8 bit transfer, tx negedge, start transfer
+      i_wb_master.wb_write(0, SPI_TX_0, 32'h5aa5);
+      i_wb_master.wb_write(0, SPI_CTRL, 32'h484);   // set 16 bit transfer, tx negedge, lsb
+      i_wb_master.wb_write(0, SPI_CTRL, 32'h485);   // set 16 bit transfer, tx negedge, start transfer
 
-      $display("status: %t generate transfer:  8 bit (0x000000a5), lsb first, tx negedge, rx posedge", $time);
+      $display("status: %t generate transfer: 16 bit, lsb first, tx negedge, rx posedge", $time);
 
       // Check bsy bit
       i_wb_master.wb_read(0, SPI_CTRL, q);
       while (q[0])
         i_wb_master.wb_read(1, SPI_CTRL, q);
 
-      i_wb_master.wb_read(1, SPI_RX_L, q);
+      i_wb_master.wb_read(1, SPI_RX_0, q);
 
-      if (i_spi_slave.data == 32'ha5a55aaa && q == 32'h0000005a)
-        $display("status: %t transfer completed: 0xa5a55aaa == 0x%x 0x0000005a == 0x%x ok", $time, i_spi_slave.data, q);
-      else if (i_spi_slave.data == 32'ha5a55aaa)
-        $display("status: %t transfer completed: 0xa5a55aaa == 0x%x 0x0000005a != 0x%x nok", $time, i_spi_slave.data, q);
-      else if (q == 32'h0000005a)
-        $display("status: %t transfer completed: 0xa5a55aaa != 0x%x 0x0000005a == 0x%x nok", $time, i_spi_slave.data, q);
+      if (i_spi_slave.data[15:0] == 16'ha55a && q == 32'h00005a7e)
+        $display("status: %t transfer completed: ok", $time);
       else
-        $display("status: %t transfer completed: 0xa5a55aaa != 0x%x 0x0000005a != 0x%x nok", $time, i_spi_slave.data, q);
+        $display("status: %t transfer completed: nok", $time);
 
       i_spi_slave.rx_negedge = 1'b1;
       i_spi_slave.tx_negedge = 1'b0;
-      i_wb_master.wb_write(0, SPI_TX_L, 32'haa);
-      i_wb_master.wb_write(0, SPI_CTRL, 32'h242);   // set 8 bit transfer, rx negedge, lsb
-      i_wb_master.wb_write(0, SPI_CTRL, 32'h243);   // set 8 bit transfer, rx negedge, start transfer
+      i_wb_master.wb_write(0, SPI_TX_0, 32'h76543210);
+      i_wb_master.wb_write(0, SPI_TX_1, 32'hfedcba98);
+      i_wb_master.wb_write(0, SPI_CTRL, 32'h602);   // set 64 bit transfer, rx negedge, lsb
+      i_wb_master.wb_write(0, SPI_CTRL, 32'h603);   // set 64 bit transfer, rx negedge, start transfer
 
-      $display("status: %t generate transfer:  8 bit (0x000000aa), lsb first, tx posedge, rx negedge", $time);
-
-      // Check bsy bit
-      i_wb_master.wb_read(0, SPI_CTRL, q);
-      while (q[0])
-        i_wb_master.wb_read(1, SPI_CTRL, q);
-
-      i_wb_master.wb_read(1, SPI_RX_L, q);
-
-      if (i_spi_slave.data == 32'ha55aaa55 && q == 32'h000000a5)
-        $display("status: %t transfer completed: 0xa55aaa55 == 0x%x 0x000000a5 == 0x%x ok", $time, i_spi_slave.data, q);
-      else if (i_spi_slave.data == 32'ha55aaa55)
-        $display("status: %t transfer completed: 0xa55aaa55 == 0x%x 0x000000a5 != 0x%x nok", $time, i_spi_slave.data, q);
-      else if (q == 32'h000000a5)
-        $display("status: %t transfer completed: 0xa55aaa55 != 0x%x 0x000000a5 == 0x%x nok", $time, i_spi_slave.data, q);
-      else
-        $display("status: %t transfer completed: 0xa55aaa55 != 0x%x 0x000000a5 != 0x%x nok", $time, i_spi_slave.data, q);
-
-      i_spi_slave.rx_negedge = 1'b1;
-      i_spi_slave.tx_negedge = 1'b0;
-      i_wb_master.wb_write(0, SPI_TX_L, 32'haa55);
-      i_wb_master.wb_write(0, SPI_CTRL, 32'h82);   // set 16 bit transfer, rx negedge
-      i_wb_master.wb_write(0, SPI_CTRL, 32'h83);   // set 16 bit transfer, rx negedge, start transfer
-
-      $display("status: %t generate transfer:  8 bit (0x0000aa55), msb first, tx posedge, rx negedge", $time);
+      $display("status: %t generate transfer: 64 bit, lsb first, tx posedge, rx negedge", $time);
 
       // Check bsy bit
       i_wb_master.wb_read(0, SPI_CTRL, q);
       while (q[0])
         i_wb_master.wb_read(1, SPI_CTRL, q);
 
-      i_wb_master.wb_read(1, SPI_RX_L, q);
+      i_wb_master.wb_read(1, SPI_RX_0, q);
+      i_wb_master.wb_read(1, SPI_RX_1, q1);
 
-      if (i_spi_slave.data == 32'haa55aa55 && q == 32'h0000a55a)
-        $display("status: %t transfer completed: 0xaa55aa55 == 0x%x 0x0000a55a == 0x%x ok", $time, i_spi_slave.data, q);
-      else if (i_spi_slave.data == 32'haa55aa55)
-        $display("status: %t transfer completed: 0xaa55aa55 == 0x%x 0x0000a55a != 0x%x nok", $time, i_spi_slave.data, q);
-      else if (q == 32'h0000a55a)
-        $display("status: %t transfer completed: 0xaa55aa55 != 0x%x 0x0000a55a == 0x%x nok", $time, i_spi_slave.data, q);
+      if (i_spi_slave.data == 32'h195d3b7f && q == 32'h5aa5a55a && q1 == 32'h76543210)
+        $display("status: %t transfer completed: ok", $time);
       else
-        $display("status: %t transfer completed: 0xaa55aa55 != 0x%x 0x0000a55a != 0x%x nok", $time, i_spi_slave.data, q);
+        $display("status: %t transfer completed: nok", $time);
 
-      i_spi_slave.rx_negedge = 1'b1;
+      i_spi_slave.rx_negedge = 1'b0;
       i_spi_slave.tx_negedge = 1'b1;
-      i_wb_master.wb_write(0, SPI_TX_L, 32'haa55a5a5);
-      i_wb_master.wb_write(0, SPI_CTRL, 32'h500);   // set 32 bit transfer, ie
-      i_wb_master.wb_write(0, SPI_CTRL, 32'h501);   // set 32 bit transfer, start transfer
+      i_wb_master.wb_write(0, SPI_TX_0, 32'hccddeeff);
+      i_wb_master.wb_write(0, SPI_TX_1, 32'h8899aabb);
+      i_wb_master.wb_write(0, SPI_TX_2, 32'h44556677);
+      i_wb_master.wb_write(0, SPI_TX_3, 32'h00112233);
+      i_wb_master.wb_write(0, SPI_CTRL, 32'h04);
+      i_wb_master.wb_write(0, SPI_CTRL, 32'h05);
 
-      $display("status: %t generate transfer: 32 bit (0xaa55a5a5), msb first, tx negedge, rx negedge", $time);
+      $display("status: %t generate transfer: 128 bit, msb first, tx posedge, rx negedge", $time);
+
+      // Check bsy bit
+      i_wb_master.wb_read(0, SPI_CTRL, q);
+      while (q[0])
+        i_wb_master.wb_read(1, SPI_CTRL, q);
+
+      i_wb_master.wb_read(1, SPI_RX_0, q);
+      i_wb_master.wb_read(1, SPI_RX_1, q1);
+      i_wb_master.wb_read(1, SPI_RX_2, q2);
+      i_wb_master.wb_read(1, SPI_RX_3, q3);
+
+      if (i_spi_slave.data == 32'hccddeeff && q == 32'h8899aabb && q1 == 32'h44556677 && q2 == 32'h00112233 && q3 == 32'h195d3b7f)
+        $display("status: %t transfer completed: ok", $time);
+      else
+        $display("status: %t transfer completed: nok", $time);
+
+      i_spi_slave.rx_negedge = 1'b0;
+      i_spi_slave.tx_negedge = 1'b1;
+      i_wb_master.wb_write(0, SPI_TX_0, 32'haa55a5a5);
+      i_wb_master.wb_write(0, SPI_CTRL, 32'h904);
+      i_wb_master.wb_write(0, SPI_CTRL, 32'h905);
+
+      $display("status: %t generate transfer: 32 bit, msb first, tx negedge, rx posedge, ie", $time);
 
       // Check interrupt signal
       while (!int)
         @(posedge clk);
 
-      i_wb_master.wb_read(1, SPI_RX_L, q);
+      i_wb_master.wb_read(1, SPI_RX_0, q);
     
       @(posedge clk);
-      if (int)
-        $display("status: %t transfer completed: interrupt still active                            nok", $time, i_spi_slave.data, q);
-
-      if (i_spi_slave.data == 32'haa55a5a5 && q == 32'h552ad52a)
-        $display("status: %t transfer completed: 0xaa55a5a5 == 0x%x 0x552ad52a == 0x%x ok", $time, i_spi_slave.data, q);
-      else if (i_spi_slave.data == 32'haa55a5a5)
-        $display("status: %t transfer completed: 0xaa55a5a5 == 0x%x 0x552ad52a != 0x%x nok", $time, i_spi_slave.data, q);
-      else if (q == 32'h552ad52a)
-        $display("status: %t transfer completed: 0xaa55a5a5 != 0x%x 0x552ad52a == 0x%x nok", $time, i_spi_slave.data, q);
+      if (!int && i_spi_slave.data == 32'haa55a5a5 && q == 32'hccddeeff)
+        $display("status: %t transfer completed: ok", $time);
       else
-        $display("status: %t transfer completed: 0xaa55a5a5 != 0x%x 0x552ad52a != 0x%x nok", $time, i_spi_slave.data, q);
+        $display("status: %t transfer completed: nok", $time);
 
-      i_spi_slave.rx_negedge = 1'b0;
+      i_spi_slave.rx_negedge = 1'b1;
       i_spi_slave.tx_negedge = 1'b0;
-      i_wb_master.wb_write(0, SPI_CTRL, 32'h706);   // set 32 bit transfer, ie, lsb, rx negedge, tx negedge
-      i_wb_master.wb_write(0, SPI_CTRL, 32'h707);   // set 32 bit transfer, start transfer
+      i_wb_master.wb_write(0, SPI_TX_0, 32'h01248421);
+      i_wb_master.wb_write(0, SPI_CTRL, 32'h1902);
+      i_wb_master.wb_write(0, SPI_CTRL, 32'h1903);
 
-      $display("status: %t generate transfer: 32 bit (0xaa55a5a5), msb first, tx negedge, rx negedge", $time);
+      $display("status: %t generate transfer: 32 bit, msb first, tx posedge, rx negedge, ie, ass", $time);
 
-      // Check interrupt signal
       while (!int)
         @(posedge clk);
 
-      i_wb_master.wb_read(1, SPI_RX_L, q);
+      i_wb_master.wb_read(1, SPI_RX_0, q);
 
       @(posedge clk);
-      if (int)
-        $display("status: %t transfer completed: interrupt still active                            nok", $time, i_spi_slave.data, q);
-
-      if (i_spi_slave.data == 32'h54ab54aa && q == 32'ha5a5aa55)
-        $display("status: %t transfer completed: 0x54ab54aa == 0x%x 0xa5a5aa55 == 0x%x ok", $time, i_spi_slave.data, q);
-      else if (i_spi_slave.data == 32'h54ab54aa)
-        $display("status: %t transfer completed: 0x54ab54aa == 0x%x 0xa5a5aa55 != 0x%x nok", $time, i_spi_slave.data, q);
-      else if (q == 32'ha5a5aa55)
-        $display("status: %t transfer completed: 0x54ab54aa != 0x%x 0xa5a5aa55 == 0x%x nok", $time, i_spi_slave.data, q);
+      if (!int && i_spi_slave.data == 32'h01248421 && q == 32'haa55a5a5)
+        $display("status: %t transfer completed: ok", $time);
       else
-        $display("status: %t transfer completed: 0x54ab54aa != 0x%x 0xa5a5aa55 != 0x%x nok", $time, i_spi_slave.data, q);
+        $display("status: %t transfer completed: nok", $time);
 
-      i_wb_master.wb_write(0, SPI_TX_L, 32'h01234567);
-      i_wb_master.wb_write(0, SPI_TX_H, 32'h89abcdef);
-      i_wb_master.wb_write(0, SPI_CTRL, 32'h606);   // set 64 bit transfer, ie, lsb, rx negedge, tx negedge
-      i_wb_master.wb_write(0, SPI_CTRL, 32'h607);   // set 64 bit transfer, start transfer
+      i_spi_slave.rx_negedge = 1'b1;
+      i_spi_slave.tx_negedge = 1'b0;
+      i_wb_master.wb_write(0, SPI_TX_0, 32'h1);
+      i_wb_master.wb_write(0, SPI_CTRL, 32'h180a);
+      i_wb_master.wb_write(0, SPI_CTRL, 32'h180b);
 
-      $display("status: %t generate transfer: 64 bit (0x0123456789abcdef), msb first, tx negedge, rx negedge", $time);
+      $display("status: %t generate transfer: 1 bit, msb first, tx posedge, rx negedge, ie, ass", $time);
 
-      // Check interrupt signal
       while (!int)
         @(posedge clk);
 
-      i_wb_master.wb_read(1, SPI_RX_H, q);
+      i_wb_master.wb_read(1, SPI_RX_0, q);
 
       @(posedge clk);
-      if (int)
-        $display("status: %t transfer completed: interrupt still active                            nok", $time, i_spi_slave.data, q);
-
-      if (i_spi_slave.data == 32'hf7b3d591 && q == 32'h01234567)
-        $display("status: %t transfer completed: 0xf7b3d591 == 0x%x 0x01234567 == 0x%x ok", $time, i_spi_slave.data, q);
-      else if (i_spi_slave.data == 32'hf7b3d591)
-        $display("status: %t transfer completed: 0xf7b3d591 == 0x%x 0x01234567 != 0x%x nok", $time, i_spi_slave.data, q);
-      else if (q == 32'hf7b3d591)
-        $display("status: %t transfer completed: 0xf7b3d591 != 0x%x 0x01234567 == 0x%x nok", $time, i_spi_slave.data, q);
+      if (!int && i_spi_slave.data == 32'h02490843 && q == 32'h0)
+        $display("status: %t transfer completed: ok", $time);
       else
-        $display("status: %t transfer completed: 0xf7b3d591 != 0x%x 0x01234567 != 0x%x nok", $time, i_spi_slave.data, q);
-
-      i_wb_master.wb_write(0, SPI_TX_L, 32'hffeeddcc);
-      i_wb_master.wb_write(0, SPI_TX_H, 32'hbbaa9988);
-      i_wb_master.wb_write(0, SPI_CTRL, 32'he06);   // ass, set 64 bit transfer, ie, lsb, rx negedge, tx negedge
-      i_wb_master.wb_write(0, SPI_CTRL, 32'he07);   // set 64 bit transfer, start transfer
-
-      $display("status: %t generate transfer: 64 bit (0xffeeddccbbaa9988), ass, msb first, tx negedge, rx negedge", $time);
-
-      // Check interrupt signal
-      while (!int)
-        @(posedge clk);
-
-      i_wb_master.wb_read(1, SPI_RX_H, q);
-
-      @(posedge clk);
-      if (int)
-        $display("status: %t transfer completed: interrupt still active                            nok", $time, i_spi_slave.data, q);
-
-      if (i_spi_slave.data == 32'h119955dd && q == 32'hffeeddcc)
-        $display("status: %t transfer completed: 0x119955dd == 0x%x 0xffeeddcc == 0x%x ok", $time, i_spi_slave.data, q);
-      else if (i_spi_slave.data == 32'h119955dd)
-        $display("status: %t transfer completed: 0x119955dd == 0x%x 0xffeeddcc != 0x%x nok", $time, i_spi_slave.data, q);
-      else if (q == 32'h119955dd)
-        $display("status: %t transfer completed: 0x119955dd != 0x%x 0xffeeddcc == 0x%x nok", $time, i_spi_slave.data, q);
-      else
-        $display("status: %t transfer completed: 0x119955dd != 0x%x 0xffeeddcc != 0x%x nok", $time, i_spi_slave.data, q);
+        $display("status: %t transfer completed: nok", $time);
 
       $display("\n\nstatus: %t Testbench done", $time);
 

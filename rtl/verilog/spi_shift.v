@@ -41,7 +41,7 @@
 `include "spi_defines.v"
 `include "timescale.v"
 
-module spi_shift (clk, rst, latch_h, latch_l, len, lsb, go,
+module spi_shift (clk, rst, latch, len, lsb, go,
                   pos_edge, neg_edge, rx_negedge, tx_negedge,
                   tip, last, 
                   p_in, p_out, s_clk, s_in, s_out);
@@ -50,8 +50,7 @@ module spi_shift (clk, rst, latch_h, latch_l, len, lsb, go,
   
   input                          clk;          // system clock
   input                          rst;          // reset
-  input                          latch_h;      // latch_h signal for storing the data in shift register
-  input                          latch_l;      // latch_l signal for storing the data in shift register
+  input                    [3:0] latch;        // latch signal for storing the data in shift register
   input [`SPI_CHAR_LEN_BITS-1:0] len;          // data len in bits (minus one)
   input                          lsb;          // lbs first on the line
   input                          go;           // start stansfer
@@ -127,14 +126,25 @@ module spi_shift (clk, rst, latch_h, latch_l, len, lsb, go,
   begin
     if (rst)
       data   <= #Tp {`SPI_MAX_CHAR{1'b0}};
-`ifdef SPI_MAX_CHAR_64
-    else if (latch_l && !tip)
+`ifdef SPI_MAX_CHAR_128
+    else if (latch[0] && !tip)
       data[31:0] <= #Tp p_in[31:0];
-    else if (latch_h && !tip)
+    else if (latch[1] && !tip)
+      data[63:32] <= #Tp p_in[31:0];
+    else if (latch[2] && !tip)
+      data[95:64] <= #Tp p_in[31:0];
+     else if (latch[3] && !tip)
+      data[127:96] <= #Tp p_in[31:0];
+`else
+`ifdef SPI_MAX_CHAR_64
+    else if (latch[0] && !tip)
+      data[31:0] <= #Tp p_in[31:0];
+    else if (latch[1] && !tip)
       data[63:32] <= #Tp p_in[31:0];
 `else
-    else if (latch_l && !tip)
+    else if (latch[0] && !tip)
       data <= #Tp p_in[`SPI_MAX_CHAR-1:0];
+`endif
 `endif
     else
       data[rx_bit_pos[`SPI_CHAR_LEN_BITS-1:0]] <= #Tp rx_clk ? s_in : data[rx_bit_pos[`SPI_CHAR_LEN_BITS-1:0]];
