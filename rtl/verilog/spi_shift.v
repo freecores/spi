@@ -198,19 +198,18 @@ module spi_shift (clk, rst, latch, byte_sel, len, lsb, go,
       end
 `else
     else if (latch[0] && !tip)
-      data <= #Tp p_in[`SPI_MAX_CHAR-1:0];
       begin
-      `ifdef `SPI_MAX_CHAR_8
+      `ifdef SPI_MAX_CHAR_8
         if (byte_sel[3])
           data[`SPI_MAX_CHAR-1:0] <= #Tp p_in[`SPI_MAX_CHAR-1:0];
       `endif
-      `ifdef `SPI_MAX_CHAR_16
+      `ifdef SPI_MAX_CHAR_16
         if (byte_sel[3])
           data[7:0] <= #Tp p_in[7:0];
         if (byte_sel[2])
           data[`SPI_MAX_CHAR-1:8] <= #Tp p_in[`SPI_MAX_CHAR-1:8];
       `endif
-      `ifdef `SPI_MAX_CHAR_24
+      `ifdef SPI_MAX_CHAR_24
         if (byte_sel[3])
           data[7:0] <= #Tp p_in[7:0];
         if (byte_sel[2])
@@ -218,7 +217,7 @@ module spi_shift (clk, rst, latch, byte_sel, len, lsb, go,
         if (byte_sel[1])
           data[`SPI_MAX_CHAR-1:16] <= #Tp p_in[`SPI_MAX_CHAR-1:16];
       `endif
-      `ifdef `SPI_MAX_CHAR_32
+      `ifdef SPI_MAX_CHAR_32
         if (byte_sel[3])
           data[7:0] <= #Tp p_in[7:0];
         if (byte_sel[2])
